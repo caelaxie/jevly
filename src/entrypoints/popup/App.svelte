@@ -1,26 +1,27 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { browser } from 'wxt/browser';
+  import { readKeyState } from '../../lib/messages';
 
   let key = '';
   let status = 'No key yet.';
 
-  function keyOf(value: unknown): string {
-    if (typeof value === 'object' && value !== null && 'key' in value && typeof value.key === 'string') {
-      return value.key;
+  function showKey(value: unknown) {
+    const stored = readKeyState(value);
+    if (!stored) {
+      status = 'The key could not be read.';
+      return;
     }
-    return '';
+    key = stored.key;
+    status = stored.key ? 'Saved.' : 'No key yet.';
   }
 
   onMount(async () => {
-    const stored = keyOf(await browser.runtime.sendMessage({ type: 'read-key' }));
-    key = stored;
-    status = stored ? 'Saved.' : 'No key yet.';
+    showKey(await browser.runtime.sendMessage({ type: 'read-key' }));
   });
 
   async function save() {
-    const stored = keyOf(await browser.runtime.sendMessage({ type: 'write-key', key }));
-    status = stored ? 'Saved.' : 'No key yet.';
+    showKey(await browser.runtime.sendMessage({ type: 'write-key', key }));
   }
 </script>
 

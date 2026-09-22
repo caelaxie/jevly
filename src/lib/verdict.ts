@@ -130,6 +130,69 @@ function parseReady(value: unknown): NoulRow {
   return { kind: "noul", label: "ready to send", value: "no", p: 1 - noul, fail: true };
 }
 
+function isDirectness(value: string): value is Directness {
+  return (levels as readonly string[]).includes(value);
+}
+
+function readChoice(value: unknown): ChoiceRow | null {
+  if (typeof value !== "object" || value === null) return null;
+  if (!("kind" in value) || value.kind !== "choice") return null;
+  if (!("label" in value) || value.label !== "audience") return null;
+  if (!("value" in value) || typeof value.value !== "string") return null;
+  if (!("p" in value) || typeof value.p !== "number" || Number.isNaN(value.p)) return null;
+  if (!("fail" in value) || typeof value.fail !== "boolean") return null;
+  if (value.fail !== (value.value === "public")) return null;
+  return { kind: "choice", label: "audience", value: value.value, p: value.p, fail: value.fail };
+}
+
+function readScore(value: unknown): ScoreRow | null {
+  if (typeof value !== "object" || value === null) return null;
+  if (!("kind" in value) || value.kind !== "score") return null;
+  if (!("label" in value) || value.label !== "directness") return null;
+  if (!("value" in value) || typeof value.value !== "string" || !isDirectness(value.value)) return null;
+  if (!("at" in value) || (value.at !== 0 && value.at !== 1 && value.at !== 2)) return null;
+  if (levels[value.at] !== value.value) return null;
+  if (!("p" in value) || typeof value.p !== "number" || Number.isNaN(value.p)) return null;
+  if (!("fail" in value) || value.fail !== false) return null;
+  return {
+    kind: "score",
+    label: "directness",
+    value: value.value,
+    levels,
+    at: value.at,
+    p: value.p,
+    fail: false,
+  };
+}
+
+function readNoul(value: unknown): NoulRow | null {
+  if (typeof value !== "object" || value === null) return null;
+  if (!("kind" in value) || value.kind !== "noul") return null;
+  if (!("label" in value) || value.label !== "ready to send") return null;
+  if (!("value" in value) || (value.value !== "yes" && value.value !== "no")) return null;
+  if (!("p" in value) || typeof value.p !== "number" || Number.isNaN(value.p)) return null;
+  if (!("fail" in value) || typeof value.fail !== "boolean") return null;
+  if (value.fail !== (value.value === "no")) return null;
+  return { kind: "noul", label: "ready to send", value: value.value, p: value.p, fail: value.fail };
+}
+
+export function readVerdict(value: unknown): Verdict | null {
+  if (typeof value !== "object" || value === null || !("status" in value)) return null;
+  if (value.status === "missing-key") return { status: "missing-key" };
+  if (value.status === "error") return { status: "error" };
+  if (value.status !== "ready") return null;
+  if (!("badge" in value) || typeof value.badge !== "string" || !isDirectness(value.badge)) return null;
+  if (!("clear" in value) || typeof value.clear !== "boolean") return null;
+  if (!("rows" in value) || !Array.isArray(value.rows) || value.rows.length !== 3) return null;
+  const audience = readChoice(value.rows[0]);
+  const directness = readScore(value.rows[1]);
+  const ready = readNoul(value.rows[2]);
+  if (!audience || !directness || !ready) return null;
+  if (value.badge !== directness.value) return null;
+  if (value.clear !== (!audience.fail && !ready.fail)) return null;
+  return { status: "ready", badge: value.badge, clear: value.clear, rows: [audience, directness, ready] };
+}
+
 export function parseAnswers(raw: unknown): ReadyVerdict {
   const body = record(raw);
   const answers = record(body.answers);

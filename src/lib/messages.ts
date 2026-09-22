@@ -1,5 +1,3 @@
-import type { Verdict } from "./verdict";
-
 export type ToBackground =
   | { type: "check"; text: string }
   | { type: "read-key" }
@@ -7,7 +5,11 @@ export type ToBackground =
 
 export type KeyState = { key: string };
 
-export type CheckReply = Verdict;
+export function readKeyState(value: unknown): KeyState | null {
+  if (typeof value !== "object" || value === null || !("key" in value)) return null;
+  if (typeof value.key !== "string") return null;
+  return { key: value.key };
+}
 
 export function readMessage(value: unknown): ToBackground | null {
   if (typeof value !== "object" || value === null || !("type" in value)) return null;

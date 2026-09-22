@@ -12,7 +12,7 @@
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
     "check": "svelte-check --tsconfig ./tsconfig.json",
-    "test": "node --experimental-strip-types --test src/lib/verdict.test.ts",
+    "test": "node --experimental-strip-types --test src/lib/verdict.test.ts src/lib/endpoint.test.ts src/lib/messages.test.ts",
     "postinstall": "wxt prepare"
   },
   "devDependencies": {

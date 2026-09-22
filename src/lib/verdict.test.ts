@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { parseAnswers } from "./verdict.ts";
+import { parseAnswers, readVerdict } from "./verdict.ts";
 
 function payload(audience: string, audienceP: number, score: number, confidence: number, noul: number) {
   return {
@@ -53,6 +53,20 @@ test("a payload missing ready throws", () => {
   const body = payload("colleague", 0.88, 1, 0.77, 0.91);
   const { ready: _ready, ...answers } = body.answers;
   assert.throws(() => parseAnswers({ ...body, answers }));
+});
+
+test("a ready verdict with junk rows is rejected", () => {
+  assert.equal(readVerdict({
+    status: "ready",
+    badge: "blunt",
+    clear: false,
+    rows: [{}, {}, {}],
+  }), null);
+});
+
+test("a parsed verdict round-trips through readVerdict", () => {
+  const verdict = parseAnswers(payload("public", 0.74, 2, 0.83, 0.19));
+  assert.deepEqual(readVerdict(verdict), verdict);
 });
 
 test("noul of 0.5 is yes and does not fail", () => {

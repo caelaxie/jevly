@@ -161,7 +161,12 @@ function buildExtension() {
   const manifestPath = path.join(repoRoot, ".output", "chrome-mv3", "manifest.json");
   const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
   if (manifest.name !== "Jevly") throw new Error(`built manifest name is ${manifest.name}`);
-  return path.join(repoRoot, ".output", "chrome-mv3");
+  const extDir = path.join(repoRoot, ".output", "chrome-mv3");
+  const hosts = new Set(manifest.host_permissions ?? []);
+  hosts.add("http://127.0.0.1/*");
+  manifest.host_permissions = [...hosts];
+  fs.writeFileSync(path.join(extDir, "manifest.json"), JSON.stringify(manifest));
+  return extDir;
 }
 
 function fixtureHtml() {

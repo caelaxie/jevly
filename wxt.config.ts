@@ -8,6 +8,6 @@ export default defineConfig({
     name: 'Jevly',
     description: 'A mark on the draft and a check before you send.',
     permissions: ['storage'],
-    host_permissions: ['https://api.typesafe.ai/*', 'http://127.0.0.1/*'],
+    host_permissions: ['https://api.typesafe.ai/*'],
   },
 });

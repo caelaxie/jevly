@@ -25,7 +25,7 @@ Ready looks like this line:
 READY run=<id> fixture=http://127.0.0.1:<port>/ evidence=/tmp/jevly-verify-evidence/<id>
 ```
 
-`launch` runs `npm run build`, then starts one session process. That process serves the compose page, serves the Jev stub, and holds a Playwright persistent context on a fresh profile with the unpacked extension loaded. The compose page and the Playwright install under `/tmp/jevly-verify-playwright` are verification scaffolding, not product files. A raw `--remote-debugging-port` on this Chromium build does not accept a later connection, so drive commands talk to the session, not to DevTools.
+`launch` runs `npm run build`, then adds `http://127.0.0.1/*` to the built manifest it is about to load. The source manifest only allows `https://api.typesafe.ai/*`. The background accepts a stored `jevEndpoint` only when it is `http://127.0.0.1`. Then launch starts one session process. That process serves the compose page, serves the Jev stub, and holds a Playwright persistent context on a fresh profile with the unpacked extension loaded. The compose page and the Playwright install under `/tmp/jevly-verify-playwright` are verification scaffolding, not product files. A raw `--remote-debugging-port` on this Chromium build does not accept a later connection, so drive commands talk to the session, not to DevTools.
 
 ## Doctor
 

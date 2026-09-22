@@ -1,9 +1,9 @@
+import { resolveEndpoint } from "../lib/endpoint";
 import { readMessage, type KeyState } from "../lib/messages";
 import { model, parseAnswers, questions, type Verdict } from "../lib/verdict";
 
 const KEY = "jevApiKey";
 const ENDPOINT_KEY = "jevEndpoint";
-const DEFAULT_ENDPOINT = "https://api.typesafe.ai/v1/systemone";
 
 async function readKey(): Promise<string> {
   const stored = await browser.storage.local.get(KEY);
@@ -13,9 +13,7 @@ async function readKey(): Promise<string> {
 
 async function endpoint(): Promise<string> {
   const stored = await browser.storage.local.get(ENDPOINT_KEY);
-  const value = stored[ENDPOINT_KEY];
-  if (typeof value === "string" && /^https?:\/\//.test(value)) return value;
-  return DEFAULT_ENDPOINT;
+  return resolveEndpoint(stored[ENDPOINT_KEY]);
 }
 
 async function check(text: string): Promise<Verdict> {
@@ -37,6 +35,10 @@ async function check(text: string): Promise<Verdict> {
   }
 }
 
+function keyState(key: string): KeyState {
+  return { key };
+}
+
 export default defineBackground(() => {
   browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     const parsed = readMessage(message);
@@ -44,18 +46,16 @@ export default defineBackground(() => {
       sendResponse({ status: "error" });
       return;
     }
-    const reply = parsed.type === "check"
-      ? check(parsed.text)
-      : parsed.type === "write-key"
-        ? browser.storage.local.set({ [KEY]: parsed.key.trim() }).then(async () => {
-            const key = await readKey();
-            const state: KeyState = { key };
-            return state;
-          })
-        : readKey().then((key) => {
-            const state: KeyState = { key };
-            return state;
-          });
+    const reply = (() => {
+      switch (parsed.type) {
+        case "check":
+          return check(parsed.text);
+        case "write-key":
+          return browser.storage.local.set({ [KEY]: parsed.key.trim() }).then(readKey).then(keyState);
+        case "read-key":
+          return readKey().then(keyState);
+      }
+    })();
     reply.then(sendResponse, () => sendResponse({ status: "error" }));
     return true;
   });
