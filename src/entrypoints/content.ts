@@ -189,6 +189,8 @@ function bind(container: HTMLElement, host: HTMLElement) {
   let sheetOpen = false;
 
   function hide() {
+    generation += 1;
+    window.clearTimeout(timer);
     badge.classList.remove("on");
     card.classList.remove("on");
     sheet.classList.remove("on");
